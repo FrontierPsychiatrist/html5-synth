@@ -15,45 +15,46 @@ var synthesizer = {
     },
     balance: 0.5,
     adsr: {
-        attack: 200,
+        attack: 50,
         decay: 50,
         sustain: 0.7,
-        release: 100
+        release: 50
     }
 };
 
-function createEnvelope(adsr) {
-    var node = audioCtx.createScriptProcessor(1024, 1, 1);
-    function process(event) {
-        inp = event.inputBuffer.getChannelData(0);
-        out = event.outputBuffer.getChannelData(0);
-        for(var i = 0, N = out.length; i < N; i++) {
-
-                out[i] = inp[i] * 0.7;
-//                out[i] = inp[i];
-//            }
-        }
-    }
-    node.onaudioprocess = process;
+function createEnvelope(adsr, currentTime) {
+    var node = audioCtx.createGain();
+    node.gain.setValueAtTime(0.0, currentTime);
+    node.gain.linearRampToValueAtTime(1.0, currentTime + adsr.attack / 1000);
+    //TODO why not linear?
+    node.gain.setTargetAtTime(adsr.sustain, currentTime + (adsr.attack + adsr.decay) / 1000, 0.5);
     return node;
 }
 
+//function createEnvelope(adsr) {
+//    var node = audioCtx.createScriptProcessor(1024, 1, 1);
+//    var processedFrames = 0;
+//    function process(event) {
+//        inp = event.inputBuffer.getChannelData(0);
+//        out = event.outputBuffer.getChannelData(0);
+//        var N = out.length;
+//        if(processedFrames/audioCtx.sampleRate*1000 < adsr.attack) {
+//            for(var i = 0; i < N; i++) {
+//                out[i] = inp[i] * Math.min(1, (processedFrames + i)/audioCtx.sampleRate);
+//            }
+//        } else {
+//            for(var j = 0; j < N; j++) {
+//                out[j] = inp[j]
+//            }
+//        }
+//        processedFrames += inp.length;
+//    }
+//    node.onaudioprocess = process;
+//    return node;
+//}
+
 var playingSounds = {};
 
-/*var lfq = audioCtx.createOscillator();
-lfq.type = 'sine';
-lfq.frequency.value = 20;
-var lfqProcessor = audioCtx.createScriptProcessor(1024, 1, 1);
-lfqProcessor.onaudioprocess = function(event) {
-    var inp = event.inputBuffer.getChannelData(0);
-    console.log(inp);
-};
-lfq.connect(lfqProcessor);
-lfq.start();
-lfq.stop(1);
-setTimeout(function() {
-    lfq.disconnect()
-}, 1000);*/
 function createOscillator(ctx, config, freq) {
     var osc = ctx.createOscillator();
     osc.type = config.type;
@@ -88,24 +89,25 @@ function Sound(freq, osc1Config, osc2Config, balance) {
 
 Sound.prototype.start = function() {
     var outgoing = this.osc1;
-    this.osc1.start();
+    this.osc1.start(0);
 
     if(this.osc2) {
         this.osc2.start();
         outgoing = this.merger;
     }
-    this.envelope = createEnvelope(synthesizer.adsr);
+    this.envelope = createEnvelope(synthesizer.adsr, audioCtx.currentTime);
     outgoing.connect(this.envelope);
     this.envelope.connect(audioCtx.destination);
 };
 
 Sound.prototype.stop = function() {
+    var now = audioCtx.currentTime;
+    this.envelope.gain.cancelScheduledValues(now);
+    this.envelope.gain.setTargetAtTime(0.0, now, synthesizer.adsr.release/1000);
     if(this.osc2) {
-        this.merger.disconnect();
-        this.osc2.stop();
+        this.osc2.stop(synthesizer.adsr.release);
     }
-    this.envelope.disconnect();
-    this.osc1.stop();
+    this.osc1.stop(synthesizer.adsr.release);
 };
 
 var noteKeyMap = {
@@ -134,16 +136,23 @@ document.onkeyup = function(event) {
     }
 };
 
+function logDataChange(name, value) {
+    console.log('Setting ' + name + ' to ', value);
+}
+
 // Data binding
 window.onload = function() {
     document.getElementById('osc1').onchange = function() {
+        logDataChange('osc1 waveform', this.value);
         synthesizer.osc1.type = this.value;
     };
     document.getElementById('osc2').onchange = function() {
+        logDataChange('osc2 waveform', this.value);
         synthesizer.osc2.type = this.value;
     };
     document.getElementById('osc1_detune').oninput = function() {
         synthesizer.osc1.detune = this.value;
+        logDataChange('osc1 detune', this.value);
         for(var key in playingSounds) {
             var sound = playingSounds[key];
             sound.osc1.detune.value = this.value;
@@ -151,6 +160,7 @@ window.onload = function() {
     };
     document.getElementById('osc2_detune').oninput = function() {
         synthesizer.osc2.detune = this.value;
+        logDataChange('osc2 detune', this.value);
         for(var key in playingSounds) {
             var sound = playingSounds[key];
             if(sound.osc2) {
@@ -160,6 +170,7 @@ window.onload = function() {
     };
     document.getElementById('osc_balance').oninput = function() {
         synthesizer.balance = this.value;
+        logDataChange('balance', this.value);
         for(var key in playingSounds) {
             var sound = playingSounds[key];
             if(sound.osc2) {
@@ -167,5 +178,21 @@ window.onload = function() {
                 sound.gain2.gain.value = this.value;
             }
         }
-    }
+    };
+    document.getElementById('attack').onchange = function() {
+        synthesizer.adsr.attack = this.value;
+        logDataChange('attack', this.value);
+    };
+    document.getElementById('decay').onchange = function() {
+        synthesizer.adsr.decay = this.value;
+        logDataChange('decay', this.value);
+    };
+    document.getElementById('sustain').onchange = function() {
+        synthesizer.adsr.sustain = this.value;
+        logDataChange('sustain', this.value);
+    };
+    document.getElementById('release').onchange = function() {
+        synthesizer.adsr.release = this.value;
+        logDataChange('release', this.value);
+    };
 };

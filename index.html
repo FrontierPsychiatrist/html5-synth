@@ -6,27 +6,42 @@
     <script src="synth.js"></script>
 </head>
 <body>
-<label for="osc1">Oscillator 1</label>
-<select name="osc1" id="osc1">
-    <option value="sine" selected="selected">Sine</option>
-    <option value="square">Square</option>
-    <option value="sawtooth">Sawtooth</option>
-    <option value="triangle">Triangle</option>
-</select>
-<label for="osc2">Oscillator 2</label>
-<select name="osc1" id="osc2">
-    <option value="sine">Sine</option>
-    <option value="square">Square</option>
-    <option value="sawtooth">Sawtooth</option>
-    <option value="triangle">Triangle</option>
-    <option value="off" selected="selected">Off</option>
-</select>
+<div>
+    <label for="osc1">Oscillator 1</label>
+    <select name="osc1" id="osc1">
+        <option value="sine" selected="selected">Sine</option>
+        <option value="square">Square</option>
+        <option value="sawtooth">Sawtooth</option>
+        <option value="triangle">Triangle</option>
+    </select>
+    <label for="osc2">Oscillator 2</label>
+    <select name="osc1" id="osc2">
+        <option value="sine">Sine</option>
+        <option value="square">Square</option>
+        <option value="sawtooth">Sawtooth</option>
+        <option value="triangle">Triangle</option>
+        <option value="off" selected="selected">Off</option>
+    </select>
+</div>
 <br/>
-<label for="osc1_detune">Detune</label>
-<input type="range" min="0" max="100" value="0" id="osc1_detune"/>
-<label for="osc2_detune">Detune</label>
-<input type="range" min="0" max="100" value="0" id="osc2_detune"/>
-<label for="osc_balance">Balance</label>
-<input type="range" min="0" max="1" step="0.05" id="osc_balance"/>
+<div>
+    <label for="osc1_detune">Detune</label>
+    <input type="range" min="0" max="100" value="0" id="osc1_detune"/>
+    <label for="osc2_detune">Detune</label>
+    <input type="range" min="0" max="100" value="0" id="osc2_detune"/>
+    <label for="osc_balance">Balance</label>
+    <input type="range" min="0" max="1" step="0.05" id="osc_balance"/>
+</div>
+<br/>
+<div>
+    <label for="attack">Attack (ms)</label>
+    <input type="number" id="attack" min="0" value="50"/>
+    <label for="decay">Decay (ms)</label>
+    <input type="number" id="decay" min="0" value="50"/>
+    <label for="sustain">Sustain (gain)</label>
+    <input type="number" id="sustain" min="0" max="1" step="0.05" value="0.7"/>
+    <label for="release">Release (ms)</label>
+    <input type="number" id="release" min="0" value="50"/>
+</div>
 </body>
 </html>
